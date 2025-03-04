@@ -162,6 +162,10 @@ class GCodeParser:
         Raises:
             ValueError: If the command is unregistered and failure_mode is "error".
         """
+        # Ignore lines that are empty or start with a comment (semicolon)
+        if not line.strip() or line.strip().startswith(';'):
+            return
+
         # Extract the command and parameters from the line.
         command = self._extract_command(line)
         params = self._extract_params(line)
@@ -285,9 +289,45 @@ if __name__ == "__main__":
         """
         print(f"G1: Command: {command}, Params: {params}")
 
+    def m150_callback(command, params, pixels):
+        """Handle LED color command (M150)."""
+        def safe_int(value, default=0):
+            try:
+                return int(value)
+            except (ValueError, TypeError):
+                print(f"⚠️ Invalid value '{value}' for M150 param. Using default={default}")
+                return default
+
+        def safe_float(value, default=1.0):
+            try:
+                return float(value)
+            except (ValueError, TypeError):
+                print(f"⚠️ Invalid value '{value}' for M150 param. Using default={default}")
+                return default
+
+        led_index = safe_int(params.get("P", 0))  # Default to 0 for all LEDs
+        r = safe_int(params.get("R", 0))
+        g = safe_int(params.get("G", 0))
+        b = safe_int(params.get("B", 0))
+        brightness = safe_float(params.get("I", 1.0))
+
+        print(f"✅ M150 command: Set LEDs to R={r}, G={g}, B={b}, Brightness={brightness}, LED Index={led_index}")
+
+        if led_index == 0:
+            # If index 0, set all LEDs to the same color
+            pixels.fill((r, g, b))
+            pixels.show()
+            print(f"✅ Set all LEDs to R={r}, G={g}, B={b}")
+        else:
+            # Set individual LED
+            pixels[led_index - 1] = (r, g, b)
+            pixels.show()
+            print(f"✅ Set LED {led_index} to R={r}, G={g}, B={b}")
+
     # Register the callbacks with the parser.
     test_parser.register_callback("G0", g0_callback)
     test_parser.register_callback("G1", g1_callback)
+    test_parser.register_callback("M150", m150_callback)
 
     # Open a sample G-code file and read its lines.
     with open("test.gcode", "r") as f:
