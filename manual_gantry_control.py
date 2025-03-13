@@ -58,9 +58,9 @@ def main():
 
     plink.connect()
 
-    motor_1.set_velocity_pid_gains(5, 0, 0)
-    motor_2.set_velocity_pid_gains(5, 0, 0)
-    motor_3.set_velocity_pid_gains(10, 0, 0)  # Higher gain for Y-axis if needed
+    motor_1.set_velocity_pid_gains(5, 0.01, 0, None, 0.001)
+    motor_2.set_velocity_pid_gains(5, 0.01, 0, None, 0.001)
+    motor_3.set_velocity_pid_gains(10, 0.01, 0, None, 0.001)  # Higher gain for Y-axis if needed
 
     # Ensure motors are stationary initially
     motor_1.velocity_command = 0
@@ -111,7 +111,7 @@ def main():
         motor_2.velocity_command = vel_setpoint_2
         motor_3.velocity_command = vel_setpoint_3
 
-        if print_counter % 10 == 0:
+        if print_counter % 1000 == 0:
             print(f"X: {radians_to_mm(pos_current_1):.1f}/{radians_to_mm(pos_target_X):.1f} mm | Errors: ({pos_error_1:.3f}, {pos_error_2:.3f}) | Vels: ({vel_setpoint_1:.3f}, {vel_setpoint_2:.3f})")
             print(f"Y: {radians_to_mm(pos_current_3):.1f}/{radians_to_mm(pos_target_Y):.1f} mm | Error: {pos_error_3:.3f} | Vel: {vel_setpoint_3:.3f}")
 

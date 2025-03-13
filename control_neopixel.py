@@ -10,6 +10,12 @@ def setup_pixels(num_leds):
     return pixels
 
 def set_led_color(pixels, led_index, brightness, color):
+    """Set the color of a single LED."""
+    if brightness < 0 or brightness > 100:
+        print("Brightness must be between 0 and 100.")
+        return
+    brightness /= 100.0
+    
     if 0 <= led_index < len(pixels):
         r, g, b = color
         pixels[led_index] = (int(r * brightness), int(g * brightness), int(b * brightness))
@@ -38,8 +44,6 @@ if __name__ == "__main__":
     # Main code for testing
     pixels = setup_pixels(8)  # Initialize 8 LEDs
 
-    # Set LED 5 to red at 50% brightness
-    set_led_color(pixels, 5, 50, (255, 0, 0))
 
     # Set all LEDs to blue at 75% brightness
-    fill_all_leds(pixels, 75, (0, 0, 255))
+    fill_all_leds(pixels, 5, (255, 255, 0))

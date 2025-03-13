@@ -46,7 +46,7 @@ Note:
     each part to extract keys and values.
 
 """
-
+import time
 
 class StatefulParams:
     """
@@ -289,6 +289,19 @@ if __name__ == "__main__":
         """
         print(f"G1: Command: {command}, Params: {params}")
 
+    def g4_callback(command, params):
+        """
+        Callback function for the G4 command.
+
+        Args:
+            command (str): The G-code command (expected to be "G1").
+            params (dict): A dictionary of parameters for the command.
+        """
+        dwell_time = float(params.get("P", 0)) #default to 0 if no P parameter provided 
+        if dwell_time > 0:
+            print(f"💡 G4: Dwell for {dwell_time} seconds.")
+            time.sleep(dwell_time)  # Wait for the dwell time
+
     def m150_callback(command, params, pixels):
         """Handle LED color command (M150)."""
         def safe_int(value, default=0):
@@ -327,6 +340,7 @@ if __name__ == "__main__":
     # Register the callbacks with the parser.
     test_parser.register_callback("G0", g0_callback)
     test_parser.register_callback("G1", g1_callback)
+    test_parser.register_callback("G4", g4_callback)
     test_parser.register_callback("M150", m150_callback)
 
     # Open a sample G-code file and read its lines.
