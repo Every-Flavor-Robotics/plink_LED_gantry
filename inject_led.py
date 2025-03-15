@@ -12,8 +12,8 @@ from PIL import ImageColor  # For handling named colors
 import re
 
 
-def generate_gcode_command(r, g, b, brightness):
-    return f"M150 R{r} G{g} B{b} I{brightness} P{1}\n"
+def generate_gcode_command(r, g, b, brightness, led_index=1):
+    return f"M150 R{r} G{g} B{b} I{brightness} P{led_index}\n"
 
 
 def hsv_to_rgb(h, s, v):
@@ -52,7 +52,8 @@ def cli():
     default=None,
     help="Output GCode file. If not specified, the output file will be named <input_gcode>_rainbow.gcode",
 )
-def rainbow(gcode, num_cycles, brightness, output):
+@click.option("--led-index", type=int, default=56, help="LED Index to turn on")
+def rainbow(gcode, num_cycles, brightness, output, led_index):
     """Add a rainbow pattern to the LED gantry."""
 
     gcode = Path(gcode)
@@ -115,7 +116,7 @@ def rainbow(gcode, num_cycles, brightness, output):
             # Convert the RGB color to GCode
             r, g, b = hsv_to_rgb(hue, saturation, value)
 
-            gcode_command = generate_gcode_command(r, g, b, brightness)
+            gcode_command = generate_gcode_command(r, g, b, brightness, led_index)
 
             # Add the GCode command to the GCode content
             gcode_output.append(gcode_command)
@@ -192,7 +193,8 @@ def _fill_to_rgb(fill_color):
     default=30,
     help="Brightness of the color (0-100)",
 )
-def svg_color(gcode, svg, brightness):
+@click.option("--led-index", type=int, default=56, help="LED Index to turn on")
+def svg_color(gcode, svg, brightness, led_index):
     """Extracts colors from the SVG file associated with the gcode."""
 
     brightness = max(0, min(brightness, 100))
@@ -268,7 +270,7 @@ def svg_color(gcode, svg, brightness):
             fill_color = fill_colors.pop(0)
             r, g, b = fill_color
 
-            gcode_command = generate_gcode_command(r, g, b, brightness)
+            gcode_command = generate_gcode_command(r, g, b, brightness, led_index)
 
             # First add G0
             gcode_output.append(line)
