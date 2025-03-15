@@ -337,19 +337,7 @@ def solid(gcode, red, green, blue, brightness, led_index):
     # Split the gcode content into lines
     gcode_lines = gcode_content.split("\n")
 
-    gcode_parser = GCodeParser()
-
     gcode_output = []
-
-    # Confirm that the number of G0 commands and fill colors match
-    # It is possible that there is one more G0 command than fill color, this is okay
-    if not (num_commands == len(fill_colors) or num_commands == len(fill_colors) + 1):
-        click.secho(
-            f"Number of G0 commands ({num_commands}) does not match number of fill colors ({len(fill_colors)})",
-            fg="red",
-        )
-        return
-
     # Add the fill colors to the GCode
     # Generate M150 commande
     color_command = generate_gcode_command(red, green, blue, brightness, led_index)
