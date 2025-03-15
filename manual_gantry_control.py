@@ -74,10 +74,8 @@ def main():
     initial_position_3 = motor_3.position
 
     with pos_lock:
-        pos_target_X = initial_position_1
-        pos_target_Y = initial_position_3
-
-    print(f"Initial positions -> Motor 1: {initial_position_1:.3f}, Motor 2: {initial_position_2:.3f}, Motor 3: {initial_position_3:.3f}")
+        pos_target_X = 0#initial_position_1
+        pos_target_Y = 0#initial_position_3
 
     # Start input thread for target updates
     threading.Thread(target=update_target, daemon=True).start()
@@ -90,9 +88,9 @@ def main():
         pos_current_3 = motor_3.position
 
         with pos_lock:
-            pos_error_1 = pos_target_X - pos_current_1
-            pos_error_2 = pos_target_X - pos_current_2
-            pos_error_3 = pos_target_Y - pos_current_3
+            pos_error_1 = pos_target_X - (pos_current_1 - initial_position_1)
+            pos_error_2 = pos_target_X - (pos_current_2 - initial_position_2)
+            pos_error_3 = pos_target_Y - (pos_current_3 - initial_position_3)
 
         # Deadband to stop jitter near target
         if abs(pos_error_1) < 0.5:
@@ -111,7 +109,7 @@ def main():
         motor_2.velocity_command = vel_setpoint_2
         motor_3.velocity_command = vel_setpoint_3
 
-        if print_counter % 1000 == 0:
+        if print_counter % 10000 == 0:
             print(f"X: {radians_to_mm(pos_current_1):.1f}/{radians_to_mm(pos_target_X):.1f} mm | Errors: ({pos_error_1:.3f}, {pos_error_2:.3f}) | Vels: ({vel_setpoint_1:.3f}, {vel_setpoint_2:.3f})")
             print(f"Y: {radians_to_mm(pos_current_3):.1f}/{radians_to_mm(pos_target_Y):.1f} mm | Error: {pos_error_3:.3f} | Vel: {vel_setpoint_3:.3f}")
 

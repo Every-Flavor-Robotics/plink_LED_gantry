@@ -4,7 +4,7 @@ import neopixel
 
 def setup_pixels(num_leds):
     # Set up NeoPixel strip (Adjust pin and number of LEDs)
-    pin = board.D21  # Use GPIO18 (or whichever GPIO you set up for the strip)
+    pin = board.D12  # Use GPIO18 (or whichever GPIO you set up for the strip)
     pixels = neopixel.NeoPixel(pin, num_leds, brightness=1.0, auto_write=False)
     print(f"Pixel strip with {num_leds} LEDs initialized.")
     return pixels

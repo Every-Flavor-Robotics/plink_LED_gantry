@@ -162,6 +162,7 @@ class GCodeParser:
         Raises:
             ValueError: If the command is unregistered and failure_mode is "error".
         """
+
         # Ignore lines that are empty or start with a comment (semicolon)
         if not line.strip() or line.strip().startswith(';'):
             return
@@ -169,6 +170,7 @@ class GCodeParser:
         # Extract the command and parameters from the line.
         command = self._extract_command(line)
         params = self._extract_params(line)
+
 
         # Check if the command has a registered callback.
         if command in self.callbacks:

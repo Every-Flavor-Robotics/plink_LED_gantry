@@ -8,8 +8,8 @@ from control_neopixel import setup_pixels, set_led_color, fill_all_leds
 
 
 # === CONSTANTS ===
-Kp_pos = 5
-Kp_pos_Y = 5
+Kp_pos = 20
+Kp_pos_Y = 20
 LEAD_MM = 8.0
 
 # === GLOBAL STATE ===
@@ -20,10 +20,11 @@ x2_zero = 0
 y_zero = 0
 led_strip = None
 target_reached = False
-num_leds = 8  # Set this to match your strip length
+num_leds = 84  # Set this to match your strip length
 pos_lock = threading.Lock()
 max_vel_x = 0
 max_vel_y = 0
+new_move = False
 
 
 # === UTILS ===
@@ -33,7 +34,7 @@ def mm_to_radians(mm):
 # === MOTOR SETUP ===
 def init_motors():
     plink = Plink()
-    plink.power_supply_voltage = 12.0
+    plink.power_supply_voltage = 15.0
 
     motors = {
         'X1': plink.channel1,
@@ -42,14 +43,14 @@ def init_motors():
     }
 
     for motor in motors.values():
-        motor.motor_voltage_limit = 12.0
+        motor.motor_voltage_limit = 15.0
         motor.control_mode = ControlMode.VELOCITY
 
     plink.connect()
 
-    motors['X1'].set_velocity_pid_gains(5, 0, 0)
-    motors['X2'].set_velocity_pid_gains(5, 0, 0)
-    motors['Y'].set_velocity_pid_gains(10, 0, 0)
+    motors['X1'].set_velocity_pid_gains(6, 0.01, 0, None, 0.0001)
+    motors['X2'].set_velocity_pid_gains(6, 0.01, 0, None, 0.0001)
+    motors['Y'].set_velocity_pid_gains(12, 0.01, 0, None, 0.0001)
 
 
     for motor in motors.values():
@@ -64,7 +65,7 @@ def init_motors():
 
 # === MOTOR CONTROL LOOP ===
 def control_loop(motors, initial_positions):
-    global pos_target_X, pos_target_Y, x1_zero, x2_zero, y_zero, target_reached, max_vel_x, max_vel_y
+    global pos_target_X, pos_target_Y, x1_zero, x2_zero, y_zero, target_reached, max_vel_x, max_vel_y, new_move
 
 
 
@@ -88,7 +89,10 @@ def control_loop(motors, initial_positions):
         pos_error_X2 = target_x - (current_positions['X2'] - x2_zero)
         pos_error_Y = target_y - (current_positions['Y'] - y_zero)
 
-        target_reached = abs(pos_error_X1) < 0.5 and abs(pos_error_X2) < 0.5 and abs(pos_error_Y) < 0.5
+        target_reached = abs(pos_error_X1) < 1.0 and abs(pos_error_X2) < 1.0 and abs(pos_error_Y) < 1.0
+        if new_move:
+            new_move = False
+            target_reached = False
 
 
         vel_X1 = Kp_pos * pos_error_X1
@@ -119,12 +123,12 @@ def control_loop(motors, initial_positions):
         motors['X2'].velocity_command = vel_X2
         motors['Y'].velocity_command = vel_Y
 
-        time.sleep(0.01)
+        time.sleep(0.005)
 
 # === GCODE COMMAND CALLBACKS ===
 def handle_G1(command, params):
     """Move command (G1) - Sets target position."""
-    global pos_target_X, pos_target_Y, target_reached
+    global pos_target_X, pos_target_Y, target_reached, new_move
 
     x = float(params.get("X", pos_target_X * LEAD_MM / (2 * math.pi)))
     y = float(params.get("Y", pos_target_Y * LEAD_MM / (2 * math.pi)))
@@ -134,14 +138,13 @@ def handle_G1(command, params):
         pos_target_X = mm_to_radians(x)
         pos_target_Y = mm_to_radians(y)
 
-    target_reached = False
-    time.sleep(0.1)
+    new_move = True
 
     print(f"Move to X={x:.1f}mm Y={y:.1f}mm (radians X={pos_target_X:.3f}, Y={pos_target_Y:.3f})")
 
     # Check error to target and exit when within threshold
-    while not target_reached:
-        time.sleep(0.01)
+    while (not target_reached) or new_move:
+        time.sleep(0.005)
 
 
 def handle_M150(command, params, pixels):
@@ -172,15 +175,13 @@ def handle_M150(command, params, pixels):
     # If LED index is 0, set all LEDs to the same color
     if led_index == 0:
         fill_all_leds(pixels, brightness, (r,g,b))
-    elif 1 <= led_index < 8:
+    elif 1 <= led_index <= num_leds:
         # For any index from 1 to 7 (8 LEDs in total), set the specific LED
         set_led_color(pixels, led_index-1, brightness, (r,g,b))
     else:
-        print(f"⚠️ LED index {led_index} out of range! Valid range is 0-7.")
+        print(f"⚠️ LED index {led_index} out of range! Valid range is 0-{num_leds}.")
 
 # In main.py
-
-
 
 
 
@@ -191,9 +192,7 @@ def run_gcode_file(filename, parser, pixels):
     with open(filename, 'r') as f:
         lines = f.readlines()
 
-    for line in lines:
-        parser.parse_line(line.strip())
-        time.sleep(0.1)  # Tiny delay to allow motion to process (can tune this)
+    parser.parse_lines(lines)
 
 # === MAIN ENTRY ===
 def main(gcode_file):
@@ -203,7 +202,7 @@ def main(gcode_file):
 
     pixels = setup_pixels(num_leds)
 
-    parser = GCodeParser(failure_mode="error")
+    parser = GCodeParser("ignore")
 
     parser.register_callback("G1", handle_G1)
     parser.register_callback("G4", lambda command, params: time.sleep(float(params.get("P", 0))))
