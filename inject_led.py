@@ -290,5 +290,81 @@ def svg_color(gcode, svg, brightness, led_index):
     click.secho(f"Generated LED GCode: {output_path}", fg="green")
 
 
+@cli.command()
+@click.argument("gcode", type=click.Path(exists=True))
+@click.option(
+    "-r",
+    "--red",
+    type=int,
+    default=255,
+    help="Red component of the color (0-255)",
+)
+@click.option(
+    "-g",
+    "--green",
+    type=int,
+    default=255,
+    help="Green component of the color (0-255)",
+)
+@click.option(
+    "-b",
+    "--blue",
+    type=int,
+    default=255,
+    help="Blue component of the color (0-255)",
+)
+@click.option(
+    "--brightness",
+    type=int,
+    default=30,
+    help="Brightness of the color (0-100)",
+)
+@click.option("--led-index", type=int, default=56, help="LED Index to turn on")
+def solid(gcode, red, green, blue, brightness, led_index):
+    """Sets a solid color for the LED gantry."""
+
+    brightness = max(0, min(brightness, 100))
+
+    # Constrain RGB values to 0-255
+    red = max(0, min(red, 255))
+    green = max(0, min(green, 255))
+    blue = max(0, min(blue, 255))
+
+    # Read the gcode file
+    gcode_path = Path(gcode)
+    gcode_content = gcode_path.read_text()
+
+    # Split the gcode content into lines
+    gcode_lines = gcode_content.split("\n")
+
+    gcode_parser = GCodeParser()
+
+    gcode_output = []
+
+    # Confirm that the number of G0 commands and fill colors match
+    # It is possible that there is one more G0 command than fill color, this is okay
+    if not (num_commands == len(fill_colors) or num_commands == len(fill_colors) + 1):
+        click.secho(
+            f"Number of G0 commands ({num_commands}) does not match number of fill colors ({len(fill_colors)})",
+            fg="red",
+        )
+        return
+
+    # Add the fill colors to the GCode
+    # Generate M150 commande
+    color_command = generate_gcode_command(red, green, blue, brightness, led_index)
+    gcode_output = [color_command]
+    for i, line in enumerate(gcode_lines):
+        # Add the original GCode line to the GCode content
+        gcode_output.append(line)
+
+    # Write the GCode content to a new file
+    output = f"output_gcodes/{gcode_path.stem}_solid.optgcode"
+    output_path = Path(output)
+    output_path.write_text("\n".join(gcode_output))
+
+    click.secho(f"Generated LED GCode: {output_path}", fg="green")
+
+
 if __name__ == "__main__":
     cli()
