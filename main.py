@@ -259,10 +259,9 @@ def main(gcode_file):
     control_thread.start()
 
     run_gcode_file(gcode_file, parser, pixels)
+    fill_all_leds(pixels, 0, (0, 0, 0))
 
     print("GCode execution finished. Holding position.")
-    while True:
-        time.sleep(1)
 
 
 if __name__ == "__main__":
