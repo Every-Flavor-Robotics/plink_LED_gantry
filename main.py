@@ -127,10 +127,10 @@ def control_loop(motors, initial_positions):
 # === GCODE COMMAND CALLBACKS ===
 def handle_G0(command, params, pixels):
     """Move command (G0) - Turns off LED and moves to target."""
-    global pos_target_X, pos_target_Y, target_reached, new_move
+    global pos_target_X, pos_target_Y, target_reached, new_move, last_m150_command
 
     # Turn off LED
-    handle_M150("M150", {"R": 0, "G": 0, "B": 0, "P": 0}, pixels)
+    fill_all_leds(pixels, 0, (0, 0, 0))
 
     x = float(params.get("X", pos_target_X * LEAD_MM / (2 * math.pi)))
     y = float(params.get("Y", pos_target_Y * LEAD_MM / (2 * math.pi)))
