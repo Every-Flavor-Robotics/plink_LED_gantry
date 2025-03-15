@@ -186,8 +186,16 @@ def _fill_to_rgb(fill_color):
     help="SVG file associated with the GCode",
     default=None,
 )
-def svg_color(gcode, svg):
+@click.option(
+    "--brightness",
+    type=int,
+    default=30,
+    help="Brightness of the color (0-100)",
+)
+def svg_color(gcode, svg, brightness):
     """Extracts colors from the SVG file associated with the gcode."""
+
+    brightness = max(0, min(brightness, 100))
 
     if svg is None:
         # Assume the SVG file has the same name as the GCode file
@@ -260,7 +268,7 @@ def svg_color(gcode, svg):
             fill_color = fill_colors.pop(0)
             r, g, b = fill_color
 
-            gcode_command = generate_gcode_command(r, g, b, 100)
+            gcode_command = generate_gcode_command(r, g, b, brightness)
 
             # First add G0
             gcode_output.append(line)
